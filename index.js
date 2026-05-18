@@ -1,14 +1,16 @@
 const express = require('express')
 const app = express()
+require('dotenv').config() 
 const port = process.env.PORT || 5000
 const cors = require('cors');
-require('dotenv').config() 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://<db_username>:<db_password>@cluster0.ujysbie.mongodb.net/?appName=Cluster0";
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = process.env.MONGODB_CONNECTION;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
+let tutorCollection;
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -19,26 +21,55 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+    
     await client.connect();
-    // Send a ping to confirm a successful connection
+
+    const db = client.db('mediqueue');
+    tutorCollection = db.collection('mediqueue-collection'); 
+   
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+    
   }
 }
 run().catch(console.dir);
 
-// এখানে মঙ্গোডিবির কানেকশন কোড বসবে।
+
 app.use(cors())
 app.use(express.json())
+
+
+app.get('/tutors', async (req, res) => {
+  if (!tutorCollection) {
+    return res.status(500).send('MongoDB collection not initialized.');
+  }
+  const cursor = tutorCollection.find();
+  const result = await cursor.toArray();
+  res.json(result);
+});
+
+
+ app.get('/tutors/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id, 'id');
+      if (!tutorCollection){
+        return res.status(500).send('tutors data didnt found')
+      }
+      const query = {_id: new ObjectId(id)}
+      // console.log(query, 'query') 
+      const result = await tutorCollection.findOne(query);
+      // console.log(result, 'tutor')
+      res.json(result)
+      
+    })
+
+
 app.get( '/', (req, res) => {
   res.send('mediqueue assignment project server is running')
  
 })
 
 app.listen(port, ()=> {
-  console.log(`simple crud server is running in ${port}`)
+  console.log(`mediqueue assignment project server is running in ${port}`)
 })
