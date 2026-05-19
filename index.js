@@ -1,3 +1,4 @@
+
 const express = require('express')
 const app = express()
 require('dotenv').config() 
@@ -52,7 +53,7 @@ app.get('/tutors', async (req, res) => {
 
  app.get('/tutors/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id, 'id');
+    
       if (!tutorCollection){
         return res.status(500).send('tutors data didnt found')
       }
@@ -62,6 +63,20 @@ app.get('/tutors', async (req, res) => {
       // console.log(result, 'tutor')
       res.json(result)
       
+    })
+
+      app.post('/tutors', async (req, res) => {
+      const newTutor = req.body;
+      const result = await tutorCollection.insertOne(newTutor);
+       console.log(result, 'New Tutor Added')
+      res.send(result)
+    })
+
+       app.delete('/tutors/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id) }
+      const result = await tutorCollection.deleteOne(query)
+      res.json(result)
     })
 
 
