@@ -72,6 +72,34 @@ app.get('/tutors', async (req, res) => {
       res.send(result)
     })
 
+     app.patch('/tutors/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id, 'id from server')
+      console.log(id, 'id')
+      const query = {_id: new ObjectId(id)}
+      const modifiedTutor = req.body;
+      const updatedDocument = {
+          $set : {
+           tutorName: modifiedTutor.tutorName,
+    photo: modifiedTutor.photo,
+    subject: modifiedTutor.subject,
+    availability: modifiedTutor.availability,
+    availableTime: modifiedTutor.availableTime,
+    feeName: modifiedTutor.feeName,
+    seats: modifiedTutor.seats,
+    sessionStartDate: modifiedTutor.sessionStartDate,
+    institutionName: modifiedTutor.institutionName,
+    experience: modifiedTutor.experience,
+    location: modifiedTutor.location,
+    teachingMode: modifiedTutor.teachingMode,
+          }
+      }
+      const result = await tutorCollection.updateOne(query, updatedDocument);
+      console.log(result, 'modified Tutor')
+      res.json(result)
+    })
+
+
        app.delete('/tutors/:id', async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id) }
