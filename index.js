@@ -71,14 +71,14 @@ app.get('/tutors', async (req, res) => {
       app.post('/tutors', async (req, res) => {
       const newTutor = req.body;
       const result = await tutorCollection.insertOne(newTutor);
-       console.log(result, 'New Tutor Added')
+      //  console.log(result, 'New Tutor Added')
       res.send(result)
     })
 
      app.patch('/tutors/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id, 'id from server')
-      console.log(id, 'id')
+      // console.log(id, 'id from server')
+      // console.log(id, 'id')
       const query = {_id: new ObjectId(id)}
       const modifiedTutor = req.body;
       const updatedDocument = {
@@ -98,8 +98,8 @@ app.get('/tutors', async (req, res) => {
           }
       }
       const result = await tutorCollection.updateOne(query, updatedDocument);
-      console.log(result, 'modified Tutor')
-      res.json(result)
+      // console.log(result, 'modified Tutor')
+      // res.json(result)
     })
 
 
@@ -115,8 +115,8 @@ app.get('/tutors', async (req, res) => {
    app.post('/booking', async (req, res) => {
   const bookingData = req.body;
   const { tutorId } = bookingData; 
-    console.log(bookingData, 'bookingData')
-     console.log(tutorId, 'tutorId')
+    // console.log(bookingData, 'bookingData')
+    //  console.log(tutorId, 'tutorId')
   try {
     
     const updatedTutor = await tutorCollection.findOneAndUpdate(
@@ -135,7 +135,7 @@ app.get('/tutors', async (req, res) => {
 
   //Booking collection এ জমা করা
     const result = await bookedSessionCollection.insertOne(bookingData);
-    console.log(result, 'data on server');
+    // console.log(result, 'data on server');
 
   
     res.json({ 
@@ -149,6 +149,42 @@ app.get('/tutors', async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
+
+// booking ডাটা দেখা। আইডি দিয়ে ফিল্টার্ড
+
+app.get('/booking/:userId', async (req, res) => {
+  // console.log(req.params, 'params' )
+     const {userId} = req.params;
+    //  console.log(userId, 'userId')
+     
+      const result = await bookedSessionCollection.find({userId : userId}).toArray()
+      res.json(result) 
+      // console.log(result, 'result')
+    })
+
+
+ 
+
+    // বুকিং ক্যানসেল করা 
+
+   
+    app.patch('/booking/:bookingId', async (req, res) => {
+        const {bookingId} = req.params;
+      console.log(bookingId, 'bookingId from server');
+      
+  console.log('server url:', process.env.MEDIQUEUE_ASSIGNMENT_SERVER);
+      const query = {_id: new ObjectId(bookingId)}
+      const modifiedSession = req.body;
+      const updatedDocument = {
+          $set : {
+            bookingStatus: "false"
+          }
+      }
+      const result = await bookedSessionCollection.updateOne(query, updatedDocument);
+      console.log(result, 'modified session')
+      res.json(result)
+    })
 
 app.get( '/', (req, res) => {
   res.send('mediqueue assignment project server is running')
