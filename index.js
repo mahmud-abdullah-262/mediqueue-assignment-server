@@ -7,6 +7,7 @@ const cors = require('cors');
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createLocalJWKSet, jwtVerify, createRemoteJWKSet } = require('jose-cjs');
 const uri = process.env.MONGODB_CONNECTION;
 
 
@@ -21,6 +22,36 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+const JWKS = createRemoteJWKSet(
+  new URL("http://localhost:3000/api/auth/jwks")
+)
+
+const verifyToken = async (req, res, next) => {
+  // হেডার নিয়ে আসা
+      const authHeader = req?.headers?.authorization;
+      // যদি হেডার না পায় তাহলে এরর দেবে
+     if(!authHeader){
+      res.status(401).json({message: 'unauthorized'})
+     }  
+    //  হেডারের ভেতরে টোকেনটা নিয়ে আসা এবং Bearer থেকে আলাদা করা। যদি না থাকে তাহলে এরর দেয়া। যদি টোকেন থাকে তাহলে পরের অপারেশনে যেতে দেয়া।
+     const token = authHeader.split(' ')[1]
+   if(!token){
+     return res.status(401).json({message: 'unauthorized'})
+      
+     } 
+   
+    //  ভেরিফিকেশন করা। যদি না থাকে তাহলে এরর দেয়া।
+     try{
+      const {payload} = await jwtVerify(token, JWKS);
+      console.log(payload, 'payload') // এটা দেখা গেলে ভেরিফিকেশন সম্পন্ন হবে
+      next()
+     } catch(error){
+     return res.status(403).json({message: 'forbidden'})
+     }
+     }
+
+
 
 async function run() {
   try {
@@ -54,7 +85,8 @@ app.get('/tutors', async (req, res) => {
 });
 
 
- app.get('/tutors/:id', async (req, res) => {
+ app.get('/tutors/:id', verifyToken, async (req, res) => {
+ 
       const id = req.params.id;
     
       if (!tutorCollection){
@@ -68,7 +100,9 @@ app.get('/tutors', async (req, res) => {
       
     })
 
-      app.post('/tutors', async (req, res) => {
+      app.post('/tutors', verifyToken, async (req, res, ) => {
+  
+
       const newTutor = req.body;
       const result = await tutorCollection.insertOne(newTutor);
       //  console.log(result, 'New Tutor Added')
@@ -76,6 +110,7 @@ app.get('/tutors', async (req, res) => {
     })
 
      app.patch('/tutors/:id', async (req, res) => {
+           
       const id = req.params.id;
       // console.log(id, 'id from server')
       // console.log(id, 'id')
@@ -112,7 +147,8 @@ app.get('/tutors', async (req, res) => {
 
 
      // বুকিং ডাটা যোগ করা ও স্লট কমানো
-   app.post('/booking', async (req, res) => {
+   app.post('/booking', verifyToken, async (req, res, next) => {
+       
   const bookingData = req.body;
   const { tutorId } = bookingData; 
     // console.log(bookingData, 'bookingData')
@@ -153,7 +189,9 @@ app.get('/tutors', async (req, res) => {
 
 // booking ডাটা দেখা। আইডি দিয়ে ফিল্টার্ড
 
-app.get('/booking/:userId', async (req, res) => {
+app.get('/booking/:userId', verifyToken, async (req, res, next) => {
+  
+
   // console.log(req.params, 'params' )
      const {userId} = req.params;
     //  console.log(userId, 'userId')
